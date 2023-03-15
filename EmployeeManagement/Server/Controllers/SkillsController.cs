@@ -14,24 +14,23 @@ namespace BlazorClientAD.Server.Controllers
     public class SkillsController : ControllerBase
     {
         private readonly ProductContext _context;
+        private readonly ILogger<SkillsController> _logger;
 
-        public SkillsController(ProductContext context)
+        public SkillsController(ProductContext context, ILogger<SkillsController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet]
         [Route("api/Skills/GetAsync")]
         public async Task<List<SkillsDTO>> GetAsync()
         {
+            List<SkillsDTO> res = new List<SkillsDTO>();
+
             try
             {
-                List<SkillsDTO> res = new List<SkillsDTO>();
-
-                var result = await _context.Skills
-              // Use AsNoTracking to disable EF change tracking
-              // Use ToListAsync to avoid blocking a thread
-              .AsNoTracking().ToListAsync();
+                var result = await _context.Skills.AsNoTracking().ToListAsync();
 
                 foreach (var item in result)
                 {
@@ -45,7 +44,9 @@ namespace BlazorClientAD.Server.Controllers
             }
             catch (Exception ex)
             {
-                return null;
+                _logger.LogError(ex.Message);
+
+                return res;
             }
         }
 
@@ -53,9 +54,10 @@ namespace BlazorClientAD.Server.Controllers
         [Route("api/Skills/GetAsyncByEmployeeId")]
         public async Task<List<SelectedSkillsDTO>> GetAsyncByEmployeeId(int employeeId)
         {
+            List<SelectedSkillsDTO> res = new List<SelectedSkillsDTO>();
+
             try
             {
-                List<SelectedSkillsDTO> res = new List<SelectedSkillsDTO>();
                 var skills = await _context.Skills.AsNoTracking().ToListAsync();
                 var employyeandskills = await _context.EmployeesAndSkills.Where(x => x.EmployeeId.Equals(employeeId)).AsNoTracking().ToListAsync();
 
@@ -75,7 +77,9 @@ namespace BlazorClientAD.Server.Controllers
             }
             catch (Exception ex)
             {
-                return null;
+                _logger.LogError(ex.Message);
+
+                return res;
             }
         }
 
@@ -83,24 +87,38 @@ namespace BlazorClientAD.Server.Controllers
         [Route("api/Skills/Post")]
         public void Post([FromBody] SkillsDTO paramSkills)
         {
-            Skills objSkills = new Skills();
-            objSkills.Id = paramSkills.Id;
-            objSkills.Name = paramSkills.Name;
-            objSkills.Description = paramSkills.Description;
-            _context.Skills.Add(objSkills);
-            _context.SaveChanges();
+            try
+            {
+                Skills objSkills = new Skills();
+                objSkills.Id = paramSkills.Id;
+                objSkills.Name = paramSkills.Name;
+                objSkills.Description = paramSkills.Description;
+                _context.Skills.Add(objSkills);
+                _context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+            }
         }
 
         [HttpPut]
         [Route("api/Skills/Put")]
         public void Put([FromBody] SkillsDTO objSkills)
         {
-            var ExistingSkills = _context.Skills.Where(x => x.Id == objSkills.Id).FirstOrDefault();
-            if (ExistingSkills != null)
+            try
             {
-                ExistingSkills.Name = objSkills.Name;
-                ExistingSkills.Description = objSkills.Description;
-                _context.SaveChanges();
+                var ExistingSkills = _context.Skills.Where(x => x.Id == objSkills.Id).FirstOrDefault();
+                if (ExistingSkills != null)
+                {
+                    ExistingSkills.Name = objSkills.Name;
+                    ExistingSkills.Description = objSkills.Description;
+                    _context.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
             }
         }
 
@@ -108,12 +126,19 @@ namespace BlazorClientAD.Server.Controllers
         [Route("api/Skills/Delete/{id}")]
         public void Delete(int id)
         {
-            var ExistingSkills = _context.Skills.Where(x => x.Id == id).FirstOrDefault();
-
-            if (ExistingSkills != null)
+            try
             {
-                _context.Skills.Remove(ExistingSkills);
-                _context.SaveChanges();
+                var ExistingSkills = _context.Skills.Where(x => x.Id == id).FirstOrDefault();
+
+                if (ExistingSkills != null)
+                {
+                    _context.Skills.Remove(ExistingSkills);
+                    _context.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
             }
         }
     }
