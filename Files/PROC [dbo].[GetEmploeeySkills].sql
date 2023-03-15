@@ -1,7 +1,7 @@
 ﻿USE [blazorTest]
 GO
 
-/****** Object: SqlProcedure [dbo].[GetEmploeeySkills] Script Date: 14/3/2023 1:54:23 πμ ******/
+/****** Object: SqlProcedure [dbo].[GetEmploeeySkills] Script Date: 15/3/2023 1:14:01 μμ ******/
 SET ANSI_NULLS ON
 GO
 
@@ -11,7 +11,8 @@ GO
 
 
 
-alter PROC [dbo].[GetEmploeeySkills](  
+
+CREATE PROC [dbo].[GetEmploeeySkills](  
     @EmployeeId INT
     )   
 AS  

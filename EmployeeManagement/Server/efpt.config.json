@@ -13,12 +13,7 @@
   "Schemas": null,
   "SelectedHandlebarsLanguage": 0,
   "SelectedToBeGenerated": 0,
-  "Tables": [
-    {
-      "Name": "[dbo].[WeatherForeCast]",
-      "ObjectType": 0
-    }
-  ],
+  "Tables": [],
   "UiHint": "(localdb)\\MSSQLLocalDB.blazorTest",
   "UncountableWords": null,
   "UseBoolPropertiesWithoutDefaultSql": false,

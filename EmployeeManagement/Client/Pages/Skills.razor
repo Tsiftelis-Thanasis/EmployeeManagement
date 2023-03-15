@@ -112,6 +112,7 @@
             await Http.PutAsJsonAsync("/api/Skills/Put",skillDto);
         }
         skills =await Http.GetFromJsonAsync<List<SkillsDTO>>("/api/Skills/GetAsync");
+        filteredSkills = skills.AsQueryable();
     }
     void EditSkill(SkillsDTO editSkillDTO)
     {
@@ -123,5 +124,6 @@
         ShowPopup = false;
         await Http.DeleteAsync("/api/Skills/Delete/" + Convert.ToInt32(skillDto.Id));
         skills = await Http.GetFromJsonAsync<List<SkillsDTO>>("/api/Skills/GetAsync");
+        filteredSkills = skills.AsQueryable();
     }
 }
