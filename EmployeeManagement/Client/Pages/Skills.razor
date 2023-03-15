@@ -35,7 +35,7 @@
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h3 class="modal-title">Edit Forecast</h3>
+                                <h3 class="modal-title">Edit Skill</h3>
                                 <button type="button" class="close" @onclick="ClosePopup">
                                     <span aria-hidden="true">X</span>
                                 </button>
@@ -91,7 +91,6 @@
     }
     void AddNewSkill()
     {
-        // Make new forecast
         skillDto = new SkillsDTO();
         skillDto.Id = 0;
         ShowPopup = true;
