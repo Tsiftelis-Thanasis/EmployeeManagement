@@ -1,0 +1,127 @@
+﻿@page "/skills"
+@using EmployeeManagement.Shared
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h1>Skills</h1>
+
+<AuthorizeView>
+    <Authorized>
+        @if (skills == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            
+             <QuickGrid Items="@filteredSkills" Class="table">
+
+                <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+                <PropertyColumn Property="@(p => p.Description)" Sortable="true" />
+                <TemplateColumn Title="Edit" Context="edit">
+                        <button class="btn btn-primary" @onclick="(() => EditSkill(edit))">Edit</button>
+                </TemplateColumn>
+                                
+
+            </QuickGrid>
+
+            <p>
+                <button class="btn btn-primary" @onclick="AddNewSkill">Add New Skill</button>
+            </p>
+            @if (ShowPopup)
+            {
+                <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 class="modal-title">Edit Forecast</h3>
+                                <button type="button" class="close" @onclick="ClosePopup">
+                                    <span aria-hidden="true">X</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <input class="form-control" type="text" placeholder="Name" @bind="skillDto.Name" />
+                                <input class="form-control" type="text" placeholder="Description" @bind="skillDto.Description" />
+                                
+                                <br />
+                                <button class="btn btn-primary" @onclick="SaveSkill">Save</button>
+                                
+                                @if (skillDto.Id > 0)
+                                {
+                                    <button class="btn btn-primary" @onclick="DeleteSkill">Delete</button>
+                                }                                
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </Authorized>
+    
+    <NotAuthorized>
+        <p>You're not signed in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    #nullable disable
+    [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private List<SkillsDTO> skills;
+    private IQueryable<SkillsDTO> filteredSkills;
+    SkillsDTO skillDto = new SkillsDTO();
+    bool ShowPopup = false;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationStateTask;
+        var user = authState.User;
+        if (user.Identity != null)
+        {
+            if (user.Identity.IsAuthenticated)
+            {   
+                skills = await Http.GetFromJsonAsync<List<SkillsDTO>>("/api/Skills/GetAsync");
+                filteredSkills = skills.AsQueryable();
+            }
+        }
+    }
+    void ClosePopup()
+    {   
+        ShowPopup = false;
+    }
+    void AddNewSkill()
+    {
+        // Make new forecast
+        skillDto = new SkillsDTO();
+        skillDto.Id = 0;
+        ShowPopup = true;
+    }
+    async Task SaveSkill()
+    {
+        ShowPopup = false;
+        var user = (await authenticationStateTask).User;
+        if (skillDto.Id == 0)
+        {
+            SkillsDTO newSkillDTO = new SkillsDTO();          
+            newSkillDTO.Name = skillDto.Name;            
+            newSkillDTO.Description = skillDto.Description;
+            await Http.PostAsJsonAsync("/api/Skills/Post", newSkillDTO);
+        }
+        else
+        {
+            await Http.PutAsJsonAsync("/api/Skills/Put",skillDto);
+        }
+        skills =await Http.GetFromJsonAsync<List<SkillsDTO>>("/api/Skills/GetAsync");
+    }
+    void EditSkill(SkillsDTO editSkillDTO)
+    {
+        skillDto = editSkillDTO;
+        ShowPopup = true;
+    }
+    async Task DeleteSkill()
+    {
+        ShowPopup = false;
+        await Http.DeleteAsync("/api/Skills/Delete/" + Convert.ToInt32(skillDto.Id));
+        skills = await Http.GetFromJsonAsync<List<SkillsDTO>>("/api/Skills/GetAsync");
+    }
+}

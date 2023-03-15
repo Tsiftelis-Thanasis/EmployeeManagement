@@ -1,0 +1,268 @@
+﻿@page "/employees"
+@using EmployeeManagement.Shared
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+<h1>Employees</h1>
+<AuthorizeView>
+    <Authorized>
+        @if (employees == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <QuickGrid Items="@FilteredEmployees" Class="table">
+
+                <PropertyColumn Property="@(p => p.FirstName)" Sortable="true">
+                    <ColumnOptions>
+                        <div class="search-box">
+                            <input type="search" autofocus @bind="firstNameFilter" @bind:event="oninput" placeholder="First name..." />
+                        </div>
+                    </ColumnOptions>
+                </PropertyColumn>
+                <PropertyColumn Property="@(p => p.LastName)" Sortable="true">
+                    <ColumnOptions>
+                        <div class="search-box">
+                            <input type="search" autofocus @bind="lastNameFilter" @bind:event="oninput" placeholder="Last name..." />
+                        </div>
+                    </ColumnOptions>
+                    </PropertyColumn>
+                <PropertyColumn Property="@(p => p.HiringDate)" Format="dd-MM-yyyy" Sortable="true" />
+                <TemplateColumn Title="Skills" Context="employeeSkills">
+                    <button class="btn btn-primary" @onclick="@(() => EditSkills(employeeSkills))">Edit Skills</button>
+                    
+                </TemplateColumn>
+                <TemplateColumn Title="Edit" Context="employeeEdit">
+                    <button class="btn btn-primary" @onclick="@(() => EditEmployee(employeeEdit))">Edit</button>
+
+                </TemplateColumn>
+                
+
+            </QuickGrid>
+
+            <p>
+                <!-- Add a new Employee -->
+                <button class="btn btn-primary"
+                    @onclick="AddNewEmployee">
+                    Add New Employee
+                </button>
+            </p>
+            @if (ShowPopup)
+            {
+                <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 class="modal-title">Edit Employee</h3>
+                                <button type="button" class="close" @onclick="ClosePopup"><span aria-hidden="true">X</span></button>
+                            </div>
+                            
+                            <div class="modal-body">
+                               
+                               <input class="form-control" type="text" placeholder="Last Name" @bind="objEmployeesDTO.LastName" />
+                               <input class="form-control" type="text" placeholder="First Name" @bind="objEmployeesDTO.FirstName" />
+                               <input class="form-control" type="date" placeholder="Hiring Date" @bind="objEmployeesDTO.HiringDate" />
+                                @*<button class="btn btn-primary" @onclick="AddSkills">Add Skills</button>*@
+                                <br />
+                               <button class="btn btn-primary" @onclick="SaveEmployee"> Save</button>
+                                @if (objEmployeesDTO.Id > 0)
+                                {
+                                    <button class="btn btn-primary" @onclick="DeleteEmployee"> Delete</button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            
+            }
+             if (ShowSkillsPopup)
+            {
+                <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 class="modal-title">Edit list of skills</h3>
+                                <button type="button" class="close" @onclick="CloseSkillsPopup"><span aria-hidden="true">X</span></button>
+                            </div>
+
+                            <div class="modal-body">
+
+                                <QuickGrid Items="@filteredSkills" Class="table">
+
+                                    <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+                                    <PropertyColumn Property="@(p => p.Description)" Sortable="true" />
+                                    <TemplateColumn Title="Checkbox" Context="Checkbox">
+                                        <input type="checkbox" id="@Checkbox.Id" @bind="@Checkbox.IsSelected" />
+                                    </TemplateColumn>
+                                
+
+                                </QuickGrid>
+
+                                <p>
+                                    <button class="btn btn-primary" @onclick="SaveSkills"> Save Skills</button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </Authorized>
+    <!-- Show this section if the user is not logged in -->
+    <NotAuthorized>
+        <p>You're not signed in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    #nullable disable
+
+
+    [CascadingParameter]
+    private Task<AuthenticationState>  authenticationStateTask { get; set; }
+
+    private IQueryable<EmployeesDTO> filteredEmployees;
+    private List<EmployeesDTO> employees;
+    private IQueryable<SelectedSkillsDTO> filteredSkills;
+    private List<SelectedSkillsDTO> skills;
+    private int employeeId;
+    private string firstNameFilter;
+    private string lastNameFilter;
+
+    EmployeesDTO objEmployeesDTO = new EmployeesDTO();
+
+    bool ShowPopup = false;
+    bool ShowSkillsPopup = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationStateTask;
+        var user = authState.User;
+        if (user.Identity != null)
+        {
+            if (user.Identity.IsAuthenticated)
+            {  
+                employees = await Http.GetFromJsonAsync<List<EmployeesDTO>>("/api/Employees/GetAsync");
+
+                filteredEmployees = employees.AsQueryable();
+
+            }
+        }
+    }
+
+    IQueryable<EmployeesDTO> FilteredEmployees
+    {
+        get
+        {
+            var result = filteredEmployees;
+
+            if (!string.IsNullOrEmpty(firstNameFilter))
+            {
+                result = result.Where(c => c.FirstName.Contains(firstNameFilter, StringComparison.CurrentCultureIgnoreCase));
+            }
+
+            if (!string.IsNullOrEmpty(lastNameFilter))
+            {
+                result = result.Where(c => c.LastName.Contains(lastNameFilter, StringComparison.CurrentCultureIgnoreCase));
+            }
+
+            return result;
+        }
+    }
+
+    void ClosePopup()
+    {
+        ShowPopup = false;
+    }
+    void CloseSkillsPopup()
+    {
+        ShowSkillsPopup = false;
+    }
+    void AddNewEmployee()
+    {
+        objEmployeesDTO = new EmployeesDTO();
+        objEmployeesDTO.Id = 0;
+        ShowPopup = true;
+    }
+    async Task SaveEmployee()
+    {
+        ShowPopup = false;
+        if (objEmployeesDTO.Id == 0)
+        {
+            EmployeesDTO objNewEmployeesDTO = new EmployeesDTO();
+            objNewEmployeesDTO.LastName = objEmployeesDTO.LastName;
+            objNewEmployeesDTO.FirstName = objEmployeesDTO.FirstName;
+            objNewEmployeesDTO.HiringDate = objEmployeesDTO.HiringDate;
+
+            //if (skills.Where(x => x.IsSelected).Count() > 0)
+            //{
+            //    List<SkillsDTO> newSkills = new List<SkillsDTO>();
+            //    foreach (SkillsDTO skill in skills.Where(x => x.IsSelected))
+            //    {
+            //        newSkills.Add(new SkillsDTO({ Id = skill.Id, Description = skill.Description, Name= skill.Name });
+            //    }
+
+            //    objNewEmployeesDTO.Skills = newSkills;
+            //}
+            
+            await Http.PostAsJsonAsync("/api/Employees/Post", objNewEmployeesDTO);
+        }
+        else
+        {
+            await Http.PutAsJsonAsync("/api/Employees/Put", objEmployeesDTO);
+        }
+        employees = await Http.GetFromJsonAsync<List<EmployeesDTO>>("/api/Employees/GetAsync");
+    }
+    async Task SaveSkills()
+    {
+        ShowSkillsPopup = false;
+
+        var selectedSkills = skills.Where(x => x.IsSelected).ToList();
+
+        if (employeeId > 0)
+        {
+            await Http.PostAsJsonAsync("/api/Employees/PostSkills/?employeeId=" + employeeId, selectedSkills);
+        }
+
+        employees = await Http.GetFromJsonAsync<List<EmployeesDTO>>("/api/Employees/GetAsync");
+    }
+
+
+    void EditEmployee(EmployeesDTO  employeesDTO)
+    {
+        objEmployeesDTO = employeesDTO;
+        ShowPopup = true;
+    }
+
+    async Task EditSkills(EmployeesDTO  employeesDTO)
+    {
+        employeeId = employeesDTO.Id;
+        if (employeeId > 0)
+        {
+            skills = await Http.GetFromJsonAsync<List<SelectedSkillsDTO>>("/api/Skills/GetAsyncByEmployeeId?employeeId=" + employeeId);
+
+            filteredSkills = skills.AsQueryable();
+
+            ShowSkillsPopup = true;
+        }
+    }
+    async Task AddSkills()
+    {
+        skills = await Http.GetFromJsonAsync<List<SelectedSkillsDTO>>("/api/Skills/GetAsyncByEmployeeId?employeeId=" + employeeId);
+
+        filteredSkills = skills.AsQueryable();
+
+        ShowSkillsPopup = true;
+    }
+    async Task DeleteEmployee()
+    {
+        ShowPopup = false;
+        await Http.DeleteAsync("/api/Employees/Delete/" +
+        Convert.ToInt32(objEmployeesDTO.Id));
+        employees = await Http.GetFromJsonAsync<List<EmployeesDTO>>("/api/Employees/GetAsync");
+    }
+   
+}
