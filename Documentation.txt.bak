@@ -18,7 +18,7 @@ Also, it's missing proper try catch handling.
 
 I didn't do the following:
 Seperate page for the skills or the employee.
-Logging, I used an existing Logger Interface. I used the LogError to log exceptions in the Event viewer of the machine.
+Logging, I used an existing Logger Interface.
 Delete multiple employees (optional).
 View details like when the employee's latest skillset change occurred (optional).
 Assign existing skills to the new employee as part of the creation form (optional).

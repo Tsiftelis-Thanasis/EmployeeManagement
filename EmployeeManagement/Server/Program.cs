@@ -31,6 +31,8 @@ builder.Services.AddAuthentication()
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
+builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
